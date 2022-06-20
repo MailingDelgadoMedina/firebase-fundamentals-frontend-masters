@@ -1,21 +1,42 @@
 <script setup>
 import { onMounted, reactive, onBeforeMount } from 'vue';
 import { useRouter } from 'vue-router';
+import {initializeApp} from 'firebase/app';//imported fore firebase
+import { config } from '../config';//imported object from firebase
+import {getFirestore,
+        collection,
+        onSnapshot,
+        doc,
+        setDoc } from 'firebase/firestore'//firestore 
+import {getAuth}from 'firebase/auth'//auth
+
+const firebaseApp = initializeApp(config.firebase);//created the instance
+const auth = getAuth(firebaseApp);
+const firestore = getFirestore(firebaseApp);//firestore
+const markdownsCol = collection(firestore, 'markdowns');//collection
 
 const state = reactive({ markdowns: [] });
 const router = useRouter();
 
 onBeforeMount(async () => {
   // Get a user
+  state.user = auth.currentUser;
+  console.log(auth.currentUser)
+
+ 
 })
 
 onMounted(() => {
-  
+   onSnapshot(markdownsCol , snapshot =>{
+
+state.markdowns = snapshot.docs.map(d => ({id: d.id, ...d.data() }));
+});
 })
 
 function newMarkdown() {
-  const newId = Math.random().toString(36).substr(2, 5);
-  router.push(`/editor/${newId}`)
+  const newDoc = doc(markdownsCol);
+  setDoc(newDoc, {markdown: '', coverted: ''});
+  router.push(`/editor/${newDoc.id}`)
 }
 </script>
 
